@@ -216,9 +216,6 @@ func main() {
 
 	p := pat.New()
 	p.Get("/auth/{provider}/callback", func(res http.ResponseWriter, req *http.Request) {
-
-		log.Println(os.Getenv("ADSK_FORGE_CLIENT_ID"), os.Getenv("ADSK_FORGE_CLIENT_SECRET"))
-
 		user, err := gothic.CompleteUserAuth(res, req)
 		if err != nil {
 			fmt.Fprintln(res, err)
@@ -245,7 +242,6 @@ func main() {
 	})
 
 	p.Get("/", func(res http.ResponseWriter, req *http.Request) {
-		log.Printf("ADS_CLIENT_ID: %v ADS_CLIENT_SECRET: %v\n", os.Getenv("ADSK_FORGE_CLIENT_ID"), os.Getenv("ADSK_FORGE_CLIENT_SECRET"))
 		t, _ := template.New("foo").Parse(indexTemplate)
 		t.Execute(res, providerIndex)
 	})
