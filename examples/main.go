@@ -16,6 +16,7 @@ import (
 	"github.com/markbates/goth/providers/amazon"
 	"github.com/markbates/goth/providers/apple"
 	"github.com/markbates/goth/providers/auth0"
+	"github.com/markbates/goth/providers/autodeskforge"
 	"github.com/markbates/goth/providers/azuread"
 	"github.com/markbates/goth/providers/battlenet"
 	"github.com/markbates/goth/providers/bitbucket"
@@ -95,6 +96,7 @@ func main() {
 		salesforce.New(os.Getenv("SALESFORCE_KEY"), os.Getenv("SALESFORCE_SECRET"), "http://localhost:3000/auth/salesforce/callback"),
 		seatalk.New(os.Getenv("SEATALK_KEY"), os.Getenv("SEATALK_SECRET"), "http://localhost:3000/auth/seatalk/callback"),
 		amazon.New(os.Getenv("AMAZON_KEY"), os.Getenv("AMAZON_SECRET"), "http://localhost:3000/auth/amazon/callback"),
+		autodeskforge.New(os.Getenv("ADSK_FORGE_CLIENT_ID"), os.Getenv("ADSK_FORGE_CLIENT_SECRET"), "http://localhost:3000/auth/autodeskforge/callback"),
 		yammer.New(os.Getenv("YAMMER_KEY"), os.Getenv("YAMMER_SECRET"), "http://localhost:3000/auth/yammer/callback"),
 		onedrive.New(os.Getenv("ONEDRIVE_KEY"), os.Getenv("ONEDRIVE_SECRET"), "http://localhost:3000/auth/onedrive/callback"),
 		azuread.New(os.Getenv("AZUREAD_KEY"), os.Getenv("AZUREAD_SECRET"), "http://localhost:3000/auth/azuread/callback", nil),
@@ -148,6 +150,7 @@ func main() {
 
 	m := make(map[string]string)
 	m["amazon"] = "Amazon"
+	m["autodeskforge"] = "Autodesk Forge"
 	m["bitbucket"] = "Bitbucket"
 	m["box"] = "Box"
 	m["dailymotion"] = "Dailymotion"
@@ -214,6 +217,8 @@ func main() {
 	p := pat.New()
 	p.Get("/auth/{provider}/callback", func(res http.ResponseWriter, req *http.Request) {
 
+		log.Println(os.Getenv("ADSK_FORGE_CLIENT_ID"), os.Getenv("ADSK_FORGE_CLIENT_SECRET"))
+
 		user, err := gothic.CompleteUserAuth(res, req)
 		if err != nil {
 			fmt.Fprintln(res, err)
@@ -240,6 +245,7 @@ func main() {
 	})
 
 	p.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		log.Printf("ADS_CLIENT_ID: %v ADS_CLIENT_SECRET: %v\n", os.Getenv("ADSK_FORGE_CLIENT_ID"), os.Getenv("ADSK_FORGE_CLIENT_SECRET"))
 		t, _ := template.New("foo").Parse(indexTemplate)
 		t.Execute(res, providerIndex)
 	})

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/markbates/goth"
-	"github.com/markbates/goth/providers/line"
+	"github.com/markbates/goth/providers/autodeskforge"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,8 +14,8 @@ func Test_New(t *testing.T) {
 	a := assert.New(t)
 	p := provider()
 
-	a.Equal(p.ClientKey, os.Getenv("LINE_CLIENT_ID"))
-	a.Equal(p.Secret, os.Getenv("LINE_CLIENT_SECRET"))
+	a.Equal(p.ClientKey, os.Getenv("ADSK_FORGE_CLIENT_ID"))
+	a.Equal(p.Secret, os.Getenv("ADSK_FORGE_CLIENT_SECRET"))
 	a.Equal(p.CallbackURL, "/foo")
 }
 
@@ -30,9 +30,9 @@ func Test_BeginAuth(t *testing.T) {
 	a := assert.New(t)
 	p := provider()
 	session, err := p.BeginAuth("test_state")
-	s := session.(*line.Session)
+	s := session.(*autodeskforge.Session)
 	a.NoError(err)
-	a.Contains(s.AuthURL, "https://access.line.me/oauth2/v2.1/authorize")
+	a.Contains(s.AuthURL, "https://developer.api.autodesk.com/authentication/v1/authorize")
 }
 
 func Test_SessionFromJSON(t *testing.T) {
@@ -40,14 +40,14 @@ func Test_SessionFromJSON(t *testing.T) {
 	a := assert.New(t)
 
 	p := provider()
-	session, err := p.UnmarshalSession(`{"AuthURL":"https://access.line.me/oauth2/v2.1/authorize","AccessToken":"1234567890"}`)
+	session, err := p.UnmarshalSession(`{"AuthURL":"https://developer.api.autodesk.com/authentication/v1/authorize","AccessToken":"1234567890"}`)
 	a.NoError(err)
 
-	s := session.(*line.Session)
-	a.Equal(s.AuthURL, "https://access.line.me/oauth2/v2.1/authorize")
+	s := session.(*autodeskforge.Session)
+	a.Equal(s.AuthURL, "https://developer.api.autodesk.com/authentication/v1/authorize")
 	a.Equal(s.AccessToken, "1234567890")
 }
 
-func provider() *line.Provider {
-	return line.New(os.Getenv("LINE_CLIENT_ID"), os.Getenv("LINE_CLIENT_SECRET"), "/foo")
+func provider() *autodeskforge.Provider {
+	return autodeskforge.New(os.Getenv("ADSK_FORGE_CLIENT_ID"), os.Getenv("ADSK_FORGE_CLIENT_SECRET"), "/foo")
 }

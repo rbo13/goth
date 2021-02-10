@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	authURL      string = "https://developer.api.autodesk.com/authentication/v1/authorize"
+	baseAuthURL  string = "https://developer.api.autodesk.com/authentication/v1/authorize"
 	tokenURL     string = "https://developer.api.autodesk.com/authentication/v1/gettoken"
 	endpointUser string = "https://developer.api.autodesk.com/userprofile/v1/users/@me"
 )
@@ -84,7 +84,7 @@ func (p *Provider) FetchUser(session goth.Session) (goth.User, error) {
 		return user, fmt.Errorf("%s cannot get user information without accessToken", p.providerName)
 	}
 
-	// Get the userID, line needs userID in order to get user profile info
+	// Get the userID, forge.autodesk needs userID in order to get user profile info
 	c := p.Client()
 	req, err := http.NewRequest("GET", endpointUser, nil)
 	if err != nil {
@@ -111,31 +111,38 @@ func (p *Provider) FetchUser(session goth.Session) (goth.User, error) {
 	}
 
 	u := struct {
-		Name          string `json:"name"`
 		UserID        string `json:"userId"`
-		DisplayName   string `json:"displayName"`
-		PictureURL    string `json:"pictureUrl"`
+		UserName      string `json:"userName"`
+		FirstName     string `json:"firstName"`
+		LastName      string `json:"lastName"`
+		EmailID       string `json:"emailId"`
 		StatusMessage string `json:"statusMessage"`
+		ProfileImages struct {
+			SizeX120 string `json:"sizeX120"`
+		}
 	}{}
 
 	if err = json.NewDecoder(bytes.NewReader(bits)).Decode(&u); err != nil {
 		return user, err
 	}
 
-	user.NickName = u.DisplayName
-	user.AvatarURL = u.PictureURL
+	user.NickName = u.UserName
+	user.AvatarURL = u.ProfileImages.SizeX120
+	user.FirstName = u.FirstName
+	user.Email = u.EmailID
+	user.LastName = u.LastName
 	user.UserID = u.UserID
 	return user, err
 }
 
 func newConfig(provider *Provider, scopes []string) *oauth2.Config {
-	authRequestURL := fmt.Sprintf("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=data:read", authURL, provider.ClientKey, provider.CallbackURL)
+	authURL := fmt.Sprintf("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=data:read", baseAuthURL, provider.ClientKey, provider.CallbackURL)
 	c := &oauth2.Config{
 		ClientID:     provider.ClientKey,
 		ClientSecret: provider.Secret,
 		RedirectURL:  provider.CallbackURL,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  authRequestURL,
+			AuthURL:  authURL,
 			TokenURL: tokenURL,
 		},
 		Scopes: []string{},
@@ -156,10 +163,11 @@ func (p *Provider) RefreshTokenAvailable() bool {
 
 //RefreshToken get new access token based on the refresh token
 func (p *Provider) RefreshToken(refreshToken string) (*oauth2.Token, error) {
-	if !p.RefreshTokenAvailable() {
-		return nil, nil
+	token := &oauth2.Token{RefreshToken: refreshToken}
+	ts := p.config.TokenSource(goth.ContextForClient(p.Client()), token)
+	newToken, err := ts.Token()
+	if err != nil {
+		return nil, err
 	}
-
-	// TODO::
-	return nil, nil
+	return newToken, err
 }
